@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalR Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@5.0.0/dist/browser/signalr.min.js"></script>
+</head>
+<body>
+    <h1>SignalR Chat Test</h1>
+    <div>
+        <input type="text" id="user" placeholder="Enter your username" />
+        <br />
+        <textarea id="message" placeholder="Enter your message"></textarea>
+        <br />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div>
+        <h2>Messages:</h2>
+        <ul id="messagesList"></ul>
+    </div>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("Hubs/ChatHub")  // تأكد أن هذه الـ URL تتطابق مع ما في الـ Program.cs
+            .build();
+
+        connection.on("ReceiveMessage", function (user, message) {
+            const msg = user + ": " + message;
+            const li = document.createElement("li");
+            li.textContent = msg;
+            document.getElementById("messagesList").appendChild(li);
+        });
+
+        connection.start().catch(err => {
+            console.error("SignalR connection failed: " + err.toString());
+        });
+
+        function sendMessage() {
+            const user = document.getElementById("user").value;  // اسم المستخدم هنا
+            const message = document.getElementById("message").value;
+
+            // إضافة سجل للـ Console لتأكيد الإرسال
+            console.log("Sending message:", user, message);
+
+            connection.invoke("SendMessage", user, message)
+                .catch(err => console.error("Error while sending message: " + err.toString()));        }
+
+    </script>
+</body>
+</html>
