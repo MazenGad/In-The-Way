@@ -18,7 +18,7 @@ using System.Text;
 
 public class Program
 {
-	public static void Main(string[] args)
+	public static async Task Main(string[] args)  // جعلها async وإرجاع Task
 	{
 		var builder = WebApplication.CreateBuilder(args);
 
@@ -103,9 +103,42 @@ public class Program
 			app.UseSwaggerUI();
 		}
 		app.UseStaticFiles();
-		app.UseAuthorization();
 
-		app.MapHub<ChatHub>("Hubs/ChatHub"); // مسار الـ Hub
+		using (var scope = app.Services.CreateScope())
+		{
+			var services = scope.ServiceProvider;
+			var userManager = services.GetRequiredService<UserManager<User>>();
+			var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+			// تأكد من وجود رول "Admin"
+			var roleExists = await roleManager.RoleExistsAsync("Admin");
+			if (!roleExists)
+			{
+				await roleManager.CreateAsync(new IdentityRole("Admin"));
+			}
+
+			// إنشاء المستخدم لو مفيش مستخدم "أدمن" موجود
+			var user = await userManager.FindByEmailAsync("admin@admin.com");
+			if (user == null)
+			{
+				user = new User
+				{
+					firstName = "admin",
+					lastName = "admin",
+					UserName = "admin2@admin.com",
+					Email = "admin2@admin.com",
+					PhoneNumber = "0000000000"
+				};
+				var result = await userManager.CreateAsync(user, "Password123!");  // تأكد من وضع باسورد قوي
+				if (result.Succeeded)
+				{
+					await userManager.AddToRoleAsync(user, "Admin");
+				}
+			}
+		}
+
+		app.UseAuthentication();
+		app.UseAuthorization();
 
 		app.MapControllers();
 		app.Run();
