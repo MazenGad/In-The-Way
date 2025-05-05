@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using AutoMapper;
 using Int.Domain.Entities;
+using Int.Application.Services;
+using Microsoft.EntityFrameworkCore;
+using Int.Infrastructure.Entities;
 
 namespace Int.Api.Controllers
 {
@@ -20,12 +23,16 @@ namespace Int.Api.Controllers
         private readonly IAuthService _authService;
 		private readonly UserManager<User> _userManager;
 		private readonly IMapper _mapper;
+		private readonly IEmailService _emailService;
+		private readonly FiElSekkaContext _context;
 
-		public AuthController(IAuthService authService, UserManager<User> userManager, IMapper mapper)
+		public AuthController(IAuthService authService, UserManager<User> userManager, IMapper mapper , IEmailService emailService , FiElSekkaContext context)
 		{
 			_authService = authService;
 			_userManager = userManager;
 			_mapper = mapper;
+			_emailService = emailService;
+			_context = context;
 		}
 
 
@@ -103,6 +110,54 @@ namespace Int.Api.Controllers
 
 			// ترجع JWT في response
 			return Ok(userDto);
+		}
+
+		[HttpPost("send-reset-code")]
+		public async Task<IActionResult> SendResetCode([FromBody] string email)
+		{
+			var user = await _userManager.FindByEmailAsync(email);
+			if (user == null)
+				return NotFound("User not found");
+
+			var code = new Random().Next(100000, 999999).ToString();
+			var token = new PasswordResetToken
+			{
+				Email = email,
+				Code = code,
+				ExpiryDate = DateTime.UtcNow.AddMinutes(10)
+			};
+
+			_context.PasswordResetTokens.Add(token);
+			await _context.SaveChangesAsync();
+
+			await _emailService.SendEmailAsync(email, "Reset Password Code", $"Your code is: {code}");
+
+			return Ok("OTP sent");
+		}
+
+		[HttpPost("reset-password")]
+		public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
+		{
+			var token = await _context.PasswordResetTokens
+				.FirstOrDefaultAsync(t => t.Email == dto.Email && t.Code == dto.Code);
+
+			if (token == null || token.ExpiryDate < DateTime.UtcNow)
+				return BadRequest("Invalid or expired code");
+
+			var user = await _userManager.FindByEmailAsync(dto.Email);
+			if (user == null)
+				return NotFound("User not found");
+
+			var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+			var result = await _userManager.ResetPasswordAsync(user, resetToken, dto.NewPassword);
+
+			if (!result.Succeeded)
+				return BadRequest(result.Errors);
+
+			_context.PasswordResetTokens.Remove(token);
+			await _context.SaveChangesAsync();
+
+			return Ok("Password reset successful");
 		}
 
 

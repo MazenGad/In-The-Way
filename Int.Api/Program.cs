@@ -113,6 +113,7 @@ public class Program
 		builder.Services.AddScoped<IRoleService, RoleService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddScoped<ICloudinaryServices, CloudinaryServices>();
+		builder.Services.AddScoped<IEmailService, EmailService>();
 		builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 		builder.Services.AddSwaggerGen(options =>

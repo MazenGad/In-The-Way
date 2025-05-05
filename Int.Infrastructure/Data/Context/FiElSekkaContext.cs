@@ -58,7 +58,8 @@ public class FiElSekkaContext : IdentityDbContext<User>
 
 	public virtual DbSet<CarPhoto> CarPhotos { get; set; }
 	public virtual DbSet<SearchHistory> SearchHistories { get; set; }
-	
+
+	public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
 
 
