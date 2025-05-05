@@ -75,7 +75,7 @@ namespace InT.Application.Services
             userDto.token = GenerateJwtToken(user);
             return userDto;
         }
-        private string GenerateJwtToken(User user)
+        public string GenerateJwtToken(User user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

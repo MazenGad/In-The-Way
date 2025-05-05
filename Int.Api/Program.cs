@@ -8,12 +8,15 @@ using Int.Infrastructure.Entities;
 using InT.Application.Services;
 using InT.Infrastructure;
 using InT.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
 
 public class Program
@@ -40,25 +43,68 @@ public class Program
 		var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 		var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
+
+
+
 		builder.Services.AddAuthentication(options =>
 		{
-			options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-			options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-		})
-		.AddJwtBearer(options =>
-		{
-			options.RequireHttpsMetadata = false;
-			options.SaveToken = true;
-			options.TokenValidationParameters = new TokenValidationParameters
+			options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+			options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+					})
+			.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme) // Cookie scheme
+			.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 			{
-				ValidateIssuerSigningKey = true,
-				IssuerSigningKey = new SymmetricSecurityKey(key),
-				ValidateIssuer = false,
-				ValidateAudience = false,
-				ValidateLifetime = true,
-				ClockSkew = TimeSpan.Zero
-			};
-		});
+				options.RequireHttpsMetadata = false;
+				options.SaveToken = true;
+				options.TokenValidationParameters = new TokenValidationParameters
+				{
+					ValidateIssuerSigningKey = true,
+					IssuerSigningKey = new SymmetricSecurityKey(key),
+					ValidateIssuer = false,
+					ValidateAudience = false,
+					ValidateLifetime = true,
+					ClockSkew = TimeSpan.Zero
+				};
+			})
+			.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+			{
+				options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+				options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+				options.CallbackPath = "/signin-google";
+				options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme; // ⬅️ مهم جدًا
+				options.SaveTokens = true;
+				options.Events.OnCreatingTicket = async context =>
+				{
+					var email = context.Identity?.FindFirst(ClaimTypes.Email)?.Value;
+					var name = context.Identity?.FindFirst(ClaimTypes.Name)?.Value;
+
+					var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+					var signInManager = context.HttpContext.RequestServices.GetRequiredService<SignInManager<User>>();
+
+					var user = await userManager.FindByEmailAsync(email);
+					if (user == null)
+					{
+						user = new User
+						{
+							Email = email,
+							UserName = email,
+							firstName = name?.Split(' ').FirstOrDefault() ?? "",
+							lastName = name?.Split(' ').LastOrDefault() ?? "",
+							SSN = null // أو أي قيمة افتراضية
+						};
+						await userManager.CreateAsync(user);
+						await userManager.AddToRoleAsync(user, "User");
+					}
+
+					await signInManager.SignInAsync(user, isPersistent: false);
+				};
+			});
+
+
+
+
+
+
 
 		builder.Services.AddAuthorization();
 		builder.Services.AddScoped<ICarService, CarService>();
@@ -97,6 +143,7 @@ public class Program
 		});
 
 		var app = builder.Build();
+		app.UseHttpsRedirection();
 
 		if (app.Environment.IsDevelopment())
 		{
