@@ -11,7 +11,9 @@ namespace Int.Domain.DTOs.Cars
         public string? Description { get; set; }
         public string? Location { get; set; }
         public string? PlateNumber { get; set; }
-        public string? Color { get; set; }
-        public string? Brand { get; set; }
-    }
+        public int? ColorID { get; set; }
+        public int? BrandID { get; set; }
+
+		public int? ModelID { get; set; }
+	}
 }

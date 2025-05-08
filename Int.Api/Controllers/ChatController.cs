@@ -2,6 +2,7 @@
 using Int.Domain.Entities;
 using Int.Domain.Entities.Chat;
 using Int.Infrastructure.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +25,7 @@ namespace Int.Api.Controllers
 
 		// الحصول على الرسائل بين اليوزر والادمن
 		[HttpGet("messages")]
-		[Authorize]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		public async Task<IActionResult> GetMessages()
 		{
 			var currentUserId = _userManager.GetUserId(User);
@@ -175,7 +176,7 @@ namespace Int.Api.Controllers
 		//}
 
 		[HttpPost("send/user-to-admin")]
-		[Authorize]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		public async Task<IActionResult> SendMessageFromUserToAdmin([FromBody] string Message)
 		{
 			var currentUserId = _userManager.GetUserId(User);
@@ -219,7 +220,7 @@ namespace Int.Api.Controllers
 		}
 
 		[HttpPost("send/admin-to-user")]
-		[Authorize(Roles ="Admin")]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
 		public async Task<IActionResult> SendMessageFromAdminToUser([FromBody] SendMessageRequest model)
 		{
 			var currentUserId = _userManager.GetUserId(User);

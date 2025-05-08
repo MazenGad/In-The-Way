@@ -12,10 +12,10 @@ namespace Int.Domain.DTOs.Cars
         public string? Description { get; set; }
         public string Location { get; set; } = null!;
         public string? PlateNumber { get; set; }
-        public string? Color { get; set; }
-        public string? Brand { get; set; }
-        public string? Model { get; set; }
-        public List<IFormFile> CarPhotos { get; set; }
+		public int ColorId { get; set; }
+		public int BrandId { get; set; }
+		public int ModelId { get; set; }
+		public List<IFormFile> CarPhotos { get; set; }
 
     }
 }

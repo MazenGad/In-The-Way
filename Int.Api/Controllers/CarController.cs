@@ -1,5 +1,6 @@
 ﻿using Int.Domain.DTOs.Cars;
 using Int.Domain.Services.Contrct;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -52,7 +53,9 @@ namespace Int.Api.Controllers
         //}
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadCar(UploadCarDTO carDto)
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+
+		public async Task<IActionResult> UploadCar(UploadCarDTO carDto)
         {
             try
             {
@@ -67,7 +70,8 @@ namespace Int.Api.Controllers
 
 
         [HttpGet("GetAll")]
-        public async Task<ActionResult<IEnumerable<CarDTO>>> GetAllCars()
+
+		public async Task<ActionResult<IEnumerable<CarDTO>>> GetAllCars()
         {
             var cars = await _carService.GetAllCarsAsync();
             return Ok(cars);
@@ -88,7 +92,9 @@ namespace Int.Api.Controllers
         }
 
         [HttpPut("Update/{id}")]
-        public async Task<IActionResult> UpdateCar(int id, [FromBody] UpdateCarDTO carDto)
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+
+		public async Task<IActionResult> UpdateCar(int id, [FromBody] UpdateCarDTO carDto)
         {
             try
             {
@@ -100,8 +106,11 @@ namespace Int.Api.Controllers
                 return NotFound(new { message = ex.Message });
             }
         }
+
         [HttpDelete("Delete/{id}")]
-        public async Task<IActionResult> DeleteCar(int id)
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+
+		public async Task<IActionResult> DeleteCar(int id)
         {
             try
             {

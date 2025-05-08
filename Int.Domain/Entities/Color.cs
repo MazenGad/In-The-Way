@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Int.Domain.Entities;
-
-public partial class Color
+namespace Int.Domain.Entities
 {
-    public int CCode { get; set; }
-
-    public string CName { get; set; } = null!;
-
-    public virtual ICollection<Car> Cars { get; set; } = new List<Car>();
+    public class Color
+    {
+		public int Id { get; set; }
+		public string Name { get; set; }
+		public ICollection<Car> Cars { get; set; } = new List<Car>();
+	}
 }

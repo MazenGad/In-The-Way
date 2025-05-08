@@ -4,6 +4,7 @@ using Int.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Int.Infrastructure.Migrations
 {
     [DbContext(typeof(FiElSekkaContext))]
-    partial class FiElSekkaContextModelSnapshot : ModelSnapshot
+    [Migration("20250508133950_AddDeletedCarsField")]
+    partial class AddDeletedCarsField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,23 +24,6 @@ namespace Int.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Int.Domain.Entities.Brand", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Brands");
-                });
 
             modelBuilder.Entity("Int.Domain.Entities.Car", b =>
                 {
@@ -47,27 +33,27 @@ namespace Int.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("BrandId")
-                        .HasColumnType("int");
+                    b.Property<string>("Brand")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ColorId")
-                        .HasColumnType("int");
+                    b.Property<string>("Color")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("DeletedCars")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ModelId")
-                        .HasColumnType("int");
+                    b.Property<string>("Model")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PlateNumber")
                         .HasColumnType("nvarchar(max)");
@@ -80,12 +66,6 @@ namespace Int.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BrandId");
-
-                    b.HasIndex("ColorId");
-
-                    b.HasIndex("ModelId");
 
                     b.HasIndex("UserId");
 
@@ -150,45 +130,6 @@ namespace Int.Infrastructure.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Chats");
-                });
-
-            modelBuilder.Entity("Int.Domain.Entities.Color", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Colors");
-                });
-
-            modelBuilder.Entity("Int.Domain.Entities.Model", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BrandId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BrandId");
-
-                    b.ToTable("Models");
                 });
 
             modelBuilder.Entity("Int.Domain.Entities.PasswordResetToken", b =>
@@ -298,9 +239,6 @@ namespace Int.Infrastructure.Migrations
 
                     b.Property<string>("firstName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("imageUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("lastName")
@@ -455,24 +393,6 @@ namespace Int.Infrastructure.Migrations
 
             modelBuilder.Entity("Int.Domain.Entities.Car", b =>
                 {
-                    b.HasOne("Int.Domain.Entities.Brand", "Brand")
-                        .WithMany("Cars")
-                        .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Int.Domain.Entities.Color", "Color")
-                        .WithMany("Cars")
-                        .HasForeignKey("ColorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Int.Domain.Entities.Model", "Model")
-                        .WithMany("Cars")
-                        .HasForeignKey("ModelId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Int.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -482,12 +402,6 @@ namespace Int.Infrastructure.Migrations
                     b.HasOne("Int.Domain.Entities.User", null)
                         .WithMany("Cars")
                         .HasForeignKey("UserId1");
-
-                    b.Navigation("Brand");
-
-                    b.Navigation("Color");
-
-                    b.Navigation("Model");
 
                     b.Navigation("User");
                 });
@@ -520,17 +434,6 @@ namespace Int.Infrastructure.Migrations
                     b.Navigation("Receiver");
 
                     b.Navigation("Sender");
-                });
-
-            modelBuilder.Entity("Int.Domain.Entities.Model", b =>
-                {
-                    b.HasOne("Int.Domain.Entities.Brand", "Brand")
-                        .WithMany("Models")
-                        .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Brand");
                 });
 
             modelBuilder.Entity("Int.Domain.Entities.SearchHistory", b =>
@@ -595,26 +498,9 @@ namespace Int.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Int.Domain.Entities.Brand", b =>
-                {
-                    b.Navigation("Cars");
-
-                    b.Navigation("Models");
-                });
-
             modelBuilder.Entity("Int.Domain.Entities.Car", b =>
                 {
                     b.Navigation("CarPhotos");
-                });
-
-            modelBuilder.Entity("Int.Domain.Entities.Color", b =>
-                {
-                    b.Navigation("Cars");
-                });
-
-            modelBuilder.Entity("Int.Domain.Entities.Model", b =>
-                {
-                    b.Navigation("Cars");
                 });
 
             modelBuilder.Entity("Int.Domain.Entities.User", b =>

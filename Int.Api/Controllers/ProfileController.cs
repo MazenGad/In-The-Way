@@ -2,7 +2,10 @@
 using Int.Domain.DTOs.Auth;
 using Int.Domain.DTOs.Users;
 using Int.Domain.Entities;
+using Int.Domain.Services.Contrct;
 using Int.Infrastructure.Entities;
+using InT.Application.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -19,17 +22,19 @@ namespace Int.Api.Controllers
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
         private readonly FiElSekkaContext _context;
+		private readonly ICloudinaryServices _cloudinaryServices;
 
-        public ProfileController(UserManager<User> userManager, IMapper mapper , FiElSekkaContext context)
+		public ProfileController(UserManager<User> userManager, IMapper mapper , FiElSekkaContext context , ICloudinaryServices cloudinaryServices)
         {
             _userManager = userManager;
             _mapper = mapper;
             _context = context;
-        }
+			_cloudinaryServices = cloudinaryServices;
+		}
 
         [HttpGet("Profile")]
-        [Authorize]
-        public async Task<IActionResult> GetProfile()
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		public async Task<IActionResult> GetProfile()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
@@ -45,8 +50,8 @@ namespace Int.Api.Controllers
 
         
         [HttpPut("update")]
-        [Authorize]
-        public async Task<IActionResult> UpdateProfile([FromBody] ProfileDTO profileDto)
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		public async Task<IActionResult> UpdateProfile([FromBody] ProfileDTO profileDto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
@@ -155,5 +160,30 @@ namespace Int.Api.Controllers
 
             return Ok(history);
         }
-    }
+
+		[HttpPost("upload-profile-image")]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		public async Task<IActionResult> UploadProfileImage(IFormFile file)
+		{
+			if (file == null || file.Length == 0)
+				return BadRequest("No file uploaded.");
+
+			var user = await _userManager.GetUserAsync(User);
+
+			string imageUrl;
+			try
+			{
+				imageUrl = await _cloudinaryServices.UploadImageAsync(file);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"Image upload failed: {ex.Message}");
+			}
+
+			user.imageUrl = imageUrl;
+			await _userManager.UpdateAsync(user);
+
+			return Ok(new { imageUrl });
+		}
+	}
 }

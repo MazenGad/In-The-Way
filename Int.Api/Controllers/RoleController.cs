@@ -1,11 +1,12 @@
 ﻿using Int.Domain.DTOs.Auth;
 using Int.Domain.Services.Contrct;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Int.Api.Controllers
 {
-	[Authorize(Roles = "Admin")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
 	public class RoleController : Controller
     {
 		private IRoleService _roleService;

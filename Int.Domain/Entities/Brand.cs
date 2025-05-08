@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Int.Domain.Entities;
-
-public partial class Brand
+namespace Int.Domain.Entities
 {
-    public int BCode { get; set; }
+	public class Brand
+	{
+		public int Id { get; set; }
+		public string Name { get; set; }
+		public ICollection<Model> Models { get; set; } = new List<Model>();
+		public ICollection<Car> Cars { get; set; } = new List<Car>();
+	}
 
-    public string BName { get; set; } = null!;
-
-    public virtual ICollection<Car> Cars { get; set; } = new List<Car>();
-
-    public virtual ICollection<Model> Models { get; set; } = new List<Model>();
 }

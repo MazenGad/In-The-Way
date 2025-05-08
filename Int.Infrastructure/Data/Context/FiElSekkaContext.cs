@@ -48,12 +48,40 @@ public class FiElSekkaContext : IdentityDbContext<User>
         .HasForeignKey(c => c.UserId)
         .OnDelete(DeleteBehavior.Restrict); // أو .OnDelete(DeleteBehavior.NoAction)
 
-       
-    }
+		modelBuilder.Entity<Car>()
+		.HasOne(c => c.Model)
+		.WithMany(m => m.Cars)
+		.HasForeignKey(c => c.ModelId)
+		.OnDelete(DeleteBehavior.Restrict);
+
+		modelBuilder.Entity<Car>()
+			.HasOne(c => c.Brand)
+			.WithMany(b => b.Cars)
+			.HasForeignKey(c => c.BrandId)
+			.OnDelete(DeleteBehavior.Restrict);
+
+		modelBuilder.Entity<Car>()
+			.HasOne(c => c.Color)
+			.WithMany(clr => clr.Cars)
+			.HasForeignKey(c => c.ColorId)
+			.OnDelete(DeleteBehavior.Restrict);
+
+		modelBuilder.Entity<Model>()
+		.HasOne(m => m.Brand)
+		.WithMany(b => b.Models)
+		.HasForeignKey(m => m.BrandId)
+		.OnDelete(DeleteBehavior.Restrict);
+
+
+
+	}
 
 
 	public virtual DbSet<Car> Cars { get; set; }
 
+	public virtual DbSet<Brand> Brands { get; set; }
+	public virtual DbSet<Model> Models { get; set; }
+	public virtual DbSet<Color> Colors { get; set; }
 	public virtual DbSet<Chat> Chats { get; set; }
 
 	public virtual DbSet<CarPhoto> CarPhotos { get; set; }

@@ -10,6 +10,8 @@ using Int.Domain.Entities;
 using Int.Domain.DTOs.Cars;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using Int.Infrastructure.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace InT.Application.Services
 {
@@ -19,28 +21,30 @@ namespace InT.Application.Services
         private readonly ICloudinaryServices _cloudinaryServices;
         private readonly IMapper _mapper;
 		private readonly IHttpContextAccessor _httpContextAccessor;
-
-		public CarService(IUnitOfWork unitOfWork, ICloudinaryServices cloudinaryServices, IMapper mapper , IHttpContextAccessor httpContextAccessor)
+        private readonly FiElSekkaContext _context;
+		public CarService(IUnitOfWork unitOfWork, ICloudinaryServices cloudinaryServices, IMapper mapper , IHttpContextAccessor httpContextAccessor , FiElSekkaContext context )
         {
             _unitOfWork = unitOfWork;
             _cloudinaryServices = cloudinaryServices;
             _mapper = mapper;
 			_httpContextAccessor = httpContextAccessor;
+			_context = context;
 
 		}
 
 		public async Task<bool> DeleteCarAsync(int carId)
         {
             var CarRepo = _unitOfWork.Repository<Car>();
-            var car = await CarRepo.GetByIdAsync(carId);
+			var car = await _context.Cars.FindAsync(carId); // جلب السيارة من قاعدة البيانات باستخدام المعرف
 
-            if (car == null)
+			if (car == null)
             {
                 throw new KeyNotFoundException("السيارة غير موجودة.");
             }
 
-            CarRepo.Delete(car);
-            await _unitOfWork.CompleteAsync();
+            car.IsDeleted = true; // تعيين حالة الحذف
+
+			await _unitOfWork.CompleteAsync();
 
             return true; // حذف ناجح
         }
@@ -79,9 +83,9 @@ namespace InT.Application.Services
         public async Task<CarDTO> UpdateCarAsync(int carId, UpdateCarDTO carDto)
         {
             var CarRepo = _unitOfWork.Repository<Car>();
-            var car = await CarRepo.GetByIdAsync(carId);
+            var car = await _context.Cars.FindAsync(carId); // جلب السيارة من قاعدة البيانات باستخدام المعرف
 
-            if (car == null)
+			if (car == null)
             {
                 throw new KeyNotFoundException("السيارة غير موجودة.");
             }
@@ -90,13 +94,28 @@ namespace InT.Application.Services
             car.Description = carDto.Description ?? car.Description;
             car.Location = carDto.Location ?? car.Location;
             car.PlateNumber = carDto.PlateNumber ?? car.PlateNumber;
-            car.Color = carDto.Color ?? car.Color;
-            car.Brand = carDto.Brand ?? car.Brand;
+			if (carDto.BrandID.HasValue)
+				car.BrandId = carDto.BrandID.Value;
 
-            await _unitOfWork.CompleteAsync(); // حفظ التعديلات في قاعدة البيانات
+			if (carDto.ModelID.HasValue)
+				car.ModelId = carDto.ModelID.Value;
 
-            return _mapper.Map<CarDTO>(car);
-        }
+			if (carDto.ColorID.HasValue)
+				car.ColorId = carDto.ColorID.Value;
+
+
+
+			await _unitOfWork.CompleteAsync(); // حفظ التعديلات في قاعدة البيانات
+
+			var updatedCar = await _context.Cars
+					.Include(c => c.Brand)
+					.Include(c => c.Color)
+					.Include(c => c.Model)
+					.Include(c => c.CarPhotos)
+					.FirstOrDefaultAsync(c => c.Id == car.Id);
+
+			return _mapper.Map<CarDTO>(updatedCar);
+		}
 
         public async Task<CarDTO> UploadCarAsync(UploadCarDTO carDto)
         {
@@ -110,9 +129,9 @@ namespace InT.Application.Services
                 Description = carDto.Description,
                 Location = carDto.Location,
                 PlateNumber = carDto.PlateNumber,
-                Color = carDto.Color,
-                Brand = carDto.Brand,
-                Model=carDto.Model,
+                ColorId = carDto.ColorId,
+				BrandId = carDto.BrandId,
+				ModelId = carDto.ModelId,
 				UserId = userId
 
 			};
@@ -139,8 +158,15 @@ namespace InT.Application.Services
             var result = await _unitOfWork.CompleteAsync();
             if (result > 0)
             {
-                return _mapper.Map<CarDTO>(car);
-            }
+				var savedCar = await _context.Cars
+							.Include(c => c.Brand)
+							.Include(c => c.Model)
+							.Include(c => c.Color)
+							.Include(c => c.CarPhotos)
+							.FirstOrDefaultAsync(c => c.Id == car.Id);
+
+				return _mapper.Map<CarDTO>(savedCar);
+			}
             else
             {
                 throw new Exception();

@@ -4,6 +4,7 @@ using Int.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Int.Infrastructure.Migrations
 {
     [DbContext(typeof(FiElSekkaContext))]
-    partial class FiElSekkaContextModelSnapshot : ModelSnapshot
+    [Migration("20250508160110_dbChangesForCar")]
+    partial class dbChangesForCar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -177,16 +180,11 @@ namespace Int.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("BrandId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BrandId");
 
                     b.ToTable("Models");
                 });
@@ -522,17 +520,6 @@ namespace Int.Infrastructure.Migrations
                     b.Navigation("Sender");
                 });
 
-            modelBuilder.Entity("Int.Domain.Entities.Model", b =>
-                {
-                    b.HasOne("Int.Domain.Entities.Brand", "Brand")
-                        .WithMany("Models")
-                        .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Brand");
-                });
-
             modelBuilder.Entity("Int.Domain.Entities.SearchHistory", b =>
                 {
                     b.HasOne("Int.Domain.Entities.User", "User")
@@ -598,8 +585,6 @@ namespace Int.Infrastructure.Migrations
             modelBuilder.Entity("Int.Domain.Entities.Brand", b =>
                 {
                     b.Navigation("Cars");
-
-                    b.Navigation("Models");
                 });
 
             modelBuilder.Entity("Int.Domain.Entities.Car", b =>

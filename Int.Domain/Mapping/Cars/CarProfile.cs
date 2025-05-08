@@ -15,19 +15,27 @@ namespace Int.Domain.Mapping.Cars
         public CarProfile()
         {
             CreateMap<Car, CarDTO>()
-                .ForMember(cd => cd.imageUrls, c => c.MapFrom(c => c.CarPhotos.Select(cr => cr.imageUrl)));
-
-            //CreateMap<Brand, BrandDTO>()
-            //    .ForMember(d => d.BrandCode, option => option.MapFrom(s => s.BCode))
-            //    .ForMember(d => d.BrandName, option => option.MapFrom(s => s.BName));
-
-
-            //CreateMap<Color, ColorDTO>()
-            //    .ForMember(d => d.ColorCode, option => option.MapFrom(s => s.CCode))
-            //    .ForMember(d => d.ColorName, option => option.MapFrom(s => s.CName));
+                .ForMember(cd => cd.BrandName, c => c.MapFrom(c => c.Brand.Name))
+				.ForMember(cd => cd.ColorName, c => c.MapFrom(c => c.Color.Name))
+				.ForMember(cd => cd.ModelName, c => c.MapFrom(c => c.Model.Name))
+				.ForMember(cd => cd.imageUrls, c => c.MapFrom(c => c.CarPhotos.Select(cr => cr.imageUrl)));
 
 
-            CreateMap<UploadCarDTO, Car>();
+
+
+
+
+			//CreateMap<Brand, BrandDTO>()
+			//    .ForMember(d => d.BrandCode, option => option.MapFrom(s => s.BCode))
+			//    .ForMember(d => d.BrandName, option => option.MapFrom(s => s.BName));
+
+
+			//CreateMap<Color, ColorDTO>()
+			//    .ForMember(d => d.ColorCode, option => option.MapFrom(s => s.CCode))
+			//    .ForMember(d => d.ColorName, option => option.MapFrom(s => s.CName));
+
+
+			CreateMap<UploadCarDTO, Car>();
 
 
         }

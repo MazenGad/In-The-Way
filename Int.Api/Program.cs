@@ -116,32 +116,54 @@ public class Program
 		builder.Services.AddScoped<IEmailService, EmailService>();
 		builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+
 		builder.Services.AddSwaggerGen(options =>
 		{
+			options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+
+			// 🔐 تعريف السيكيوريتي
 			options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
 			{
-				Type = SecuritySchemeType.Http,
-				Scheme = "Bearer",
-				BearerFormat = "JWT",
+				Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer abc123\"",
+				Name = "Authorization",
 				In = ParameterLocation.Header,
-				Description = "Enter {your_token}"
+				Type = SecuritySchemeType.ApiKey,
+				Scheme = "Bearer"
 			});
 
-			options.AddSecurityRequirement(new OpenApiSecurityRequirement
+			// ✋ فرض استخدام التوكن على كل الريكويستات
+			options.AddSecurityRequirement(new OpenApiSecurityRequirement()
+	{
+		{
+			new OpenApiSecurityScheme
 			{
+				Reference = new OpenApiReference
 				{
-					new OpenApiSecurityScheme
-					{
-						Reference = new OpenApiReference
-						{
-							Type = ReferenceType.SecurityScheme,
-							Id = "Bearer"
-						}
-					},
-					new string[] {}
-				}
-			});
+					Type = ReferenceType.SecurityScheme,
+					Id = "Bearer"
+				},
+				Scheme = "oauth2",
+				Name = "Bearer",
+				In = ParameterLocation.Header,
+			},
+			new List<string>()
+		}
+	});
 		});
+
+
+		builder.Services.AddCors(options =>
+		{
+			options.AddPolicy("AllowAll", builder =>
+			{
+				builder
+					.WithOrigins("https://localhost:7246") // Swagger UI origin
+					.AllowAnyMethod()
+					.AllowAnyHeader();
+			});
+
+		});
+
 
 		var app = builder.Build();
 		app.UseHttpsRedirection();
@@ -152,12 +174,25 @@ public class Program
 			app.UseSwaggerUI();
 		}
 		app.UseStaticFiles();
+		app.Use(async (context, next) =>
+		{
+			try
+			{
+				await next.Invoke();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Exception: {ex.Message}");
+				throw;
+			}
+		});
 
 		using (var scope = app.Services.CreateScope())
 		{
 			var services = scope.ServiceProvider;
 			var userManager = services.GetRequiredService<UserManager<User>>();
 			var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+			var context = services.GetRequiredService<FiElSekkaContext>();
 
 			// تأكد من وجود رول "Admin"
 			var roleExists = await roleManager.RoleExistsAsync("Admin");
@@ -183,9 +218,61 @@ public class Program
 				{
 					await userManager.AddToRoleAsync(user, "Admin");
 				}
-			}
-		}
 
+			}
+			// Seed Brands and Models (Egypt Market)
+			if (!context.Brands.Any())
+			{
+				var brands = new List<Brand>
+		{
+			new Brand { Name = "Hyundai" },
+			new Brand { Name = "Chevrolet" },
+			new Brand { Name = "Nissan" },
+			new Brand { Name = "BYD" },
+			new Brand { Name = "Geely" },
+			new Brand { Name = "Toyota" }
+		};
+
+				context.Brands.AddRange(brands);
+				await context.SaveChangesAsync();
+
+				var models = new List<Model>
+		{
+			new Model { Name = "Verna", BrandId = brands.First(b => b.Name == "Hyundai").Id },
+			new Model { Name = "Elantra", BrandId = brands.First(b => b.Name == "Hyundai").Id },
+			new Model { Name = "Lanos", BrandId = brands.First(b => b.Name == "Chevrolet").Id },
+			new Model { Name = "Optra", BrandId = brands.First(b => b.Name == "Chevrolet").Id },
+			new Model { Name = "Sunny", BrandId = brands.First(b => b.Name == "Nissan").Id },
+			new Model { Name = "Tiida", BrandId = brands.First(b => b.Name == "Nissan").Id },
+			new Model { Name = "F3", BrandId = brands.First(b => b.Name == "BYD").Id },
+			new Model { Name = "L3", BrandId = brands.First(b => b.Name == "BYD").Id },
+			new Model { Name = "Emgrand", BrandId = brands.First(b => b.Name == "Geely").Id },
+			new Model { Name = "Corolla", BrandId = brands.First(b => b.Name == "Toyota").Id }
+		};
+
+				context.Models.AddRange(models);
+				await context.SaveChangesAsync();
+			}
+
+			// Seed Colors
+			if (!context.Colors.Any())
+			{
+				var colors = new List<Color>
+		{
+			new Color { Name = "White" },
+			new Color { Name = "Black" },
+			new Color { Name = "Silver" },
+			new Color { Name = "Gray" },
+			new Color { Name = "Red" },
+			new Color { Name = "Blue" }
+		};
+
+				context.Colors.AddRange(colors);
+				await context.SaveChangesAsync();
+			}
+
+		}
+		app.UseCors("AllowAll");
 		app.UseAuthentication();
 		app.UseAuthorization();
 
