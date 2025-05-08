@@ -13,5 +13,7 @@ namespace Int.Domain.DTOs.Users
         public string Email { get; set; }
         public string token { get; set; }
         public string phoneNumber { get; set; }
-    }
+
+		public string? imageUrl { get; set; }
+	}
 }
