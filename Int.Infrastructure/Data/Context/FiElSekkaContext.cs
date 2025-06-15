@@ -23,30 +23,29 @@ public class FiElSekkaContext : IdentityDbContext<User>
 		base.OnModelCreating(modelBuilder);
 		var userManager = _serviceProvider.GetRequiredService<UserManager<User>>();
 
-		// إعداد القيود الأجنبية لتحديد سلوك الحذف
 		modelBuilder.Entity<Chat>()
 			.HasOne(c => c.Sender)
-			.WithMany() // يمكن أن تتغير هذه العلاقة حسب احتياجك
+			.WithMany() 
 			.HasForeignKey(c => c.SenderId)
-			.OnDelete(DeleteBehavior.Restrict); // أو .OnDelete(DeleteBehavior.NoAction)
+			.OnDelete(DeleteBehavior.Restrict);
 
 		modelBuilder.Entity<Chat>()
 			.HasOne(c => c.Receiver)
-			.WithMany() // يمكن أن تتغير هذه العلاقة حسب احتياجك
+			.WithMany() 
 			.HasForeignKey(c => c.ReceiverId)
-			.OnDelete(DeleteBehavior.Restrict); // أو .OnDelete(DeleteBehavior.NoAction)
+			.OnDelete(DeleteBehavior.Restrict); 
 
         modelBuilder.Entity<SearchHistory>()
         .HasOne(c => c.User)
-        .WithMany() // يمكن أن تتغير هذه العلاقة حسب احتياجك
+        .WithMany()
         .HasForeignKey(c => c.UserId)
-        .OnDelete(DeleteBehavior.Restrict); // أو .OnDelete(DeleteBehavior.NoAction)
+        .OnDelete(DeleteBehavior.Cascade); 
 
         modelBuilder.Entity<Car>()
         .HasOne(c => c.User)
-        .WithMany() // يمكن أن تتغير هذه العلاقة حسب احتياجك
+        .WithMany() 
         .HasForeignKey(c => c.UserId)
-        .OnDelete(DeleteBehavior.Restrict); // أو .OnDelete(DeleteBehavior.NoAction)
+        .OnDelete(DeleteBehavior.Cascade); 
 
 		modelBuilder.Entity<Car>()
 		.HasOne(c => c.Model)

@@ -79,37 +79,47 @@ namespace Int.Api.Controllers
 		[HttpGet("google-callback")]
 		public async Task<IActionResult> GoogleCallback()
 		{
-			var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-			if (!result.Succeeded)
-				return Unauthorized();
-
-			var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
-			var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
-
-			if (email is null)
-				return BadRequest("Email not found from Google");
-
-			// ابحث عن اليوزر أو أنشئه لو مش موجود
-			var user = await _userManager.FindByEmailAsync(email);
-			if (user == null)
+			try
 			{
-				user = new User
+				var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+				if (!result.Succeeded)
+					return Unauthorized();
+
+				var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+				var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
+
+				if (email is null)
+					return BadRequest("Email not found from Google");
+
+				// ابحث عن اليوزر أو أنشئه لو مش موجود
+				var user = await _userManager.FindByEmailAsync(email);
+				if (user == null)
 				{
-					Email = email,
-					UserName = email,
-					firstName = name?.Split(' ').FirstOrDefault() ?? "",
-					lastName = name?.Split(' ').LastOrDefault() ?? ""
-				};
-				await _userManager.CreateAsync(user);
-				await _userManager.AddToRoleAsync(user, "User");
+					user = new User
+					{
+						Email = email,
+						UserName = email,
+						firstName = name?.Split(' ').FirstOrDefault() ?? "",
+						lastName = name?.Split(' ').LastOrDefault() ?? ""
+					};
+					await _userManager.CreateAsync(user);
+					await _userManager.AddToRoleAsync(user, "User");
+				}
+
+				// توليد JWT
+				var userDto = _mapper.Map<UserDTO>(user);
+				userDto.token = _authService.GenerateJwtToken(user); // لازم تكون public في AuthService
+
+				// ترجع JWT في response
+				return Ok(userDto);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("EXCEPTION: " + ex.ToString());
+				return StatusCode(500, new { message = "Internal Server Error", detail = ex.Message });
 			}
 
-			// توليد JWT
-			var userDto = _mapper.Map<UserDTO>(user);
-			userDto.token = _authService.GenerateJwtToken(user); // لازم تكون public في AuthService
 
-			// ترجع JWT في response
-			return Ok(userDto);
 		}
 
 		[HttpPost("send-reset-code")]

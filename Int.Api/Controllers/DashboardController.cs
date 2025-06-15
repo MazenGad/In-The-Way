@@ -40,17 +40,24 @@ namespace Int.Api.Controllers
 		public async Task<IActionResult> DeleteUser(string id)
 		{
 			var user = await _userManager.FindByIdAsync(id);
-
 			if (user == null)
 				return NotFound(new { message = "User not found" });
+
+			var chats = _context.Chats
+				.Where(c => c.SenderId == id || c.ReceiverId == id);
+
+			_context.Chats.RemoveRange(chats);
 
 			var result = await _userManager.DeleteAsync(user);
 
 			if (!result.Succeeded)
 				return BadRequest(new { message = "Failed to delete user", errors = result.Errors });
 
+			await _context.SaveChangesAsync();
+
 			return Ok(new { message = "User deleted successfully" });
 		}
+
 
 		[HttpGet("DashboardStats")]
 		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme,Roles = "Admin")]

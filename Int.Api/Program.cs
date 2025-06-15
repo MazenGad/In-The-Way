@@ -213,7 +213,7 @@ public class Program
 					Email = "admin2@admin.com",
 					PhoneNumber = "0000000000"
 				};
-				var result = await userManager.CreateAsync(user, "Password123!");  // تأكد من وضع باسورد قوي
+				var result = await userManager.CreateAsync(user, "Password123!"); 
 				if (result.Succeeded)
 				{
 					await userManager.AddToRoleAsync(user, "Admin");
