@@ -48,11 +48,16 @@ public class Program
 
 		builder.Services.AddAuthentication(options =>
 		{
-			options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-			options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-					})
-			.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme) // Cookie scheme
-			.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+			options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+			options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+			options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+				})
+			.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, c =>
+			{
+				c.Cookie.SecurePolicy = CookieSecurePolicy.None;   
+				c.Cookie.SameSite = SameSiteMode.Lax;
+			}).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 			{
 				options.RequireHttpsMetadata = false;
 				options.SaveToken = true;
@@ -164,9 +169,17 @@ public class Program
 
 		});
 
+		builder.Services.Configure<CookiePolicyOptions>(options =>
+		{
+			options.MinimumSameSitePolicy = SameSiteMode.Lax;
+			options.Secure = CookieSecurePolicy.None; // HTTP
+			options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
+		});
+
+
 
 		var app = builder.Build();
-		app.UseHttpsRedirection();
+		//app.UseHttpsRedirection();
 
 		if (app.Environment.IsDevelopment())
 		{
@@ -272,6 +285,7 @@ public class Program
 			}
 
 		}
+		app.UseCookiePolicy();
 		app.UseCors("AllowAll");
 		app.UseAuthentication();
 		app.UseAuthorization();
